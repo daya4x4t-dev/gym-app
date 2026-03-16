@@ -1,12 +1,71 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
 import '../utils/auth_background.dart';
 import '../utils/app_theme.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_textfield.dart';
 
-class SignupScreen extends StatelessWidget {
+class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
+
+  @override
+  State<SignupScreen> createState() => _SignupScreenState();
+}
+
+class _SignupScreenState extends State<SignupScreen> {
+
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
+  bool isLoading = false;
+
+  Future signup() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse("http://127.0.0.1:5000/auth/signup"),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({
+          "name": nameController.text.trim(),
+          "email": emailController.text.trim(),
+          "password": passwordController.text.trim(),
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Signup successful")),
+        );
+
+        Navigator.pop(context); // Go back to login
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data["error"] ?? "Signup failed")),
+        );
+      }
+    } catch (e) {
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +84,7 @@ class SignupScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+
                       const Text(
                         'Create Account',
                         style: TextStyle(
@@ -33,47 +93,69 @@ class SignupScreen extends StatelessWidget {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
+
                       const SizedBox(height: 4),
+
                       Text(
                         'Start your fitness journey today',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.45),
+                          color: Colors.white.withOpacity(0.45),
                           fontSize: 14,
                         ),
                       ),
+
                       const SizedBox(height: 30),
-                      const CustomTextField(
+
+                      CustomTextField(
                         hint: 'Full Name',
-                        prefixIcon: Icon(Icons.person_outline,
+                        controller: nameController,
+                        prefixIcon: const Icon(Icons.person_outline,
                             color: Colors.white54, size: 19),
                         textInputAction: TextInputAction.next,
                       ),
+
                       const SizedBox(height: 14),
-                      const CustomTextField(
+
+                      CustomTextField(
                         hint: 'Email address',
+                        controller: emailController,
                         keyboardType: TextInputType.emailAddress,
-                        prefixIcon: Icon(Icons.email_outlined,
+                        prefixIcon: const Icon(Icons.email_outlined,
                             color: Colors.white54, size: 19),
                         textInputAction: TextInputAction.next,
                       ),
+
                       const SizedBox(height: 14),
-                      const CustomTextField(
+
+                      CustomTextField(
                         hint: 'Password',
+                        controller: passwordController,
                         isPassword: true,
-                        prefixIcon: Icon(Icons.lock_outline,
+                        prefixIcon: const Icon(Icons.lock_outline,
                             color: Colors.white54, size: 19),
                         textInputAction: TextInputAction.done,
                       ),
+
                       const SizedBox(height: 28),
-                      CustomButton(text: 'CREATE ACCOUNT', onTap: () {}),
+
+                      isLoading
+                          ? const Center(
+                              child: CircularProgressIndicator(),
+                            )
+                          : CustomButton(
+                              text: 'CREATE ACCOUNT',
+                              onTap: signup,
+                            ),
+
                       const SizedBox(height: 22),
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
                             "Already have an account? ",
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.5),
+                              color: Colors.white.withOpacity(0.5),
                               fontSize: 14,
                             ),
                           ),
@@ -90,6 +172,7 @@ class SignupScreen extends StatelessWidget {
                           ),
                         ],
                       ),
+
                     ],
                   ),
                 ),

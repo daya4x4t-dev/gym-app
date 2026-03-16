@@ -1,91 +1,176 @@
 import 'dart:ui';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
 import '../utils/auth_background.dart';
 import '../utils/app_theme.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_textfield.dart';
 
-class ResetPasswordScreen extends StatelessWidget {
-  const ResetPasswordScreen({super.key});
+class ResetPasswordScreen extends StatefulWidget {
+
+  final String token;
+
+  const ResetPasswordScreen({super.key, required this.token});
+
+  @override
+  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+}
+
+class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+
+  final passwordController = TextEditingController();
+  final confirmController = TextEditingController();
+
+  bool isLoading = false;
+
+  Future resetPassword() async {
+
+    final password = passwordController.text.trim();
+    final confirm = confirmController.text.trim();
+
+    if (password.isEmpty || confirm.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill all fields")),
+      );
+      return;
+    }
+
+    if (password != confirm) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Passwords do not match")),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+
+      final response = await http.post(
+        Uri.parse("http://127.0.0.1:5000/auth/reset-password"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer ${widget.token}"
+        },
+        body: jsonEncode({
+          "newPassword": password
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Password updated successfully")),
+        );
+
+        Navigator.pop(context);
+
+      } else {
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data["error"] ?? "Failed to reset password")),
+        );
+
+      }
+
+    } catch (e) {
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+
+    } finally {
+
+      setState(() {
+        isLoading = false;
+      });
+
+    }
+
+  }
+
+  @override
+  void dispose() {
+    passwordController.dispose();
+    confirmController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+
     return AuthBackground(
       child: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 8, top: 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back_ios_new,
-                      color: Colors.white, size: 20),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                      child: Container(
-                        decoration: AppTheme.glassCard(),
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Reset Password',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 26,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Set a strong new password',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.45),
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 30),
-                            const CustomTextField(
-                              hint: 'New Password',
-                              isPassword: true,
-                              prefixIcon: Icon(Icons.lock_outline,
-                                  color: Colors.white54, size: 19),
-                              textInputAction: TextInputAction.next,
-                            ),
-                            const SizedBox(height: 14),
-                            const CustomTextField(
-                              hint: 'Confirm Password',
-                              isPassword: true,
-                              prefixIcon: Icon(Icons.lock_reset,
-                                  color: Colors.white54, size: 19),
-                              textInputAction: TextInputAction.done,
-                            ),
-                            const SizedBox(height: 28),
-                            CustomButton(
-                              text: 'SAVE CHANGES',
-                              onTap: () {},
-                            ),
-                          ],
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  decoration: AppTheme.glassCard(),
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+
+                      const Text(
+                        'Reset Password',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                    ),
+
+                      const SizedBox(height: 6),
+
+                      const Text(
+                        'Set a strong new password',
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: 14,
+                        ),
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      CustomTextField(
+                        hint: 'New Password',
+                        controller: passwordController,
+                        isPassword: true,
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      CustomTextField(
+                        hint: 'Confirm Password',
+                        controller: confirmController,
+                        isPassword: true,
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : CustomButton(
+                              text: "SAVE CHANGES",
+                              onTap: resetPassword,
+                            ),
+
+                    ],
                   ),
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
