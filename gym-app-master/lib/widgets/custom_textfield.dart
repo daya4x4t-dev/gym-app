@@ -11,6 +11,7 @@ class CustomTextField extends StatefulWidget {
   final FocusNode? focusNode;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted; // ✅ ADDED
 
   const CustomTextField({
     super.key,
@@ -22,6 +23,7 @@ class CustomTextField extends StatefulWidget {
     this.focusNode,
     this.textInputAction,
     this.onChanged,
+    this.onSubmitted, // ✅ ADDED
   });
 
   @override
@@ -82,6 +84,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
         keyboardType: widget.keyboardType,
         textInputAction: widget.textInputAction,
         onChanged: widget.onChanged,
+        onSubmitted: widget.onSubmitted, // ✅ ADDED
         style: const TextStyle(
           color: Colors.white,
           fontSize: 15,

@@ -1,31 +1,29 @@
-const supabase = require('../config/supabaseClient');
+import { supabase } from "../config/supabaseClient.js";
 
 const authMiddleware = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
+    const token = req.headers.authorization?.replace("Bearer ", "");
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Authorization token is required' });
+    if (!token) {
+      return res.status(401).json({
+        error: "Unauthorized - No token provided",
+      });
     }
 
-    const token = authHeader.split(' ')[1];
+    const { data, error } = await supabase.auth.getUser(token);
 
-    // Validate the JWT access token with Supabase Auth.
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser(token);
-
-    if (error || !user) {
-      return res.status(401).json({ error: 'Invalid or expired token' });
+    if (error || !data.user) {
+      return res.status(401).json({
+        error: "Invalid or expired token",
+      });
     }
 
-    req.user = user;
-    req.accessToken = token;
+    req.user = data.user;
     next();
   } catch (err) {
-    return res.status(500).json({ error: 'Failed to authenticate user', details: err.message });
+    console.error("Auth Middleware Error:", err);
+    res.status(500).json({ error: "Authentication failed" });
   }
 };
 
-module.exports = authMiddleware;
+export default authMiddleware;

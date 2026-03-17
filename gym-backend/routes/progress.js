@@ -1,10 +1,25 @@
-const express = require('express');
-const authMiddleware = require('../middleware/authMiddleware');
-const { addProgress, getProgressByUserId } = require('../controllers/progressController');
+import express from "express";
 
 const router = express.Router();
 
-router.post('/', authMiddleware, addProgress);
-router.get('/:userId', authMiddleware, getProgressByUserId);
+// Example: Add progress
+router.post("/", (req, res) => {
+  const { userId, weight, date } = req.body;
 
-module.exports = router;
+  res.json({
+    message: "Progress added successfully",
+    data: { userId, weight, date }
+  });
+});
+
+// Example: Get progress by user
+router.get("/:userId", (req, res) => {
+  const { userId } = req.params;
+
+  res.json({
+    message: "User progress fetched",
+    userId
+  });
+});
+
+export default router;  

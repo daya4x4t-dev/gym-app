@@ -1,19 +1,29 @@
-const express = require('express');
-const authMiddleware = require('../middleware/authMiddleware');
-const {
+import express from "express";
+import authMiddleware from "../middleware/authMiddleware.js";
+
+import {
   getWorkouts,
   getWorkoutById,
   createWorkout,
   updateWorkout,
   deleteWorkout,
-} = require('../controllers/workoutController');
+} from "../controllers/workoutController.js";
 
 const router = express.Router();
 
-router.get('/', getWorkouts);
-router.get('/:id', getWorkoutById);
-router.post('/', authMiddleware, createWorkout);
-router.put('/:id', authMiddleware, updateWorkout);
-router.delete('/:id', authMiddleware, deleteWorkout);
+// Get all workouts
+router.get("/", getWorkouts);
 
-module.exports = router;
+// Get workout by ID
+router.get("/:id", getWorkoutById);
+
+// Create workout (protected)
+router.post("/", authMiddleware, createWorkout);
+
+// Update workout (protected)
+router.put("/:id", authMiddleware, updateWorkout);
+
+// Delete workout (protected)
+router.delete("/:id", authMiddleware, deleteWorkout);
+
+export default router;

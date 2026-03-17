@@ -1,305 +1,269 @@
-const supabase = require('../config/supabaseClient');
+import { supabase } from "../config/supabaseClient.js";
 
-const isValidEmail = (email) =>
-  typeof email === 'string' &&
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-/*
-================================
-SIGNUP
-POST /auth/signup
-================================
-*/
-const signup = async (req, res) => {
+// =======================
+// SIGNUP
+// =======================
+export const signup = async (req, res) => {
   try {
+    const { email, password, username } = req.body;
 
-    const { email, password, name } = req.body;
-
-    if (!isValidEmail(email) || !password || password.length < 6 || !name) {
+    // ✅ Validate inputs
+    if (!email || !password || !username) {
       return res.status(400).json({
-        error: "Valid email, name and password (min 6 chars) required"
+        success: false,
+        message: "Email, password and username are required",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters",
       });
     }
 
     const { data, error } = await supabase.auth.signUp({
       email,
-      password
+      password,
+      options: {
+        data: { username }, // ✅ Save username to metadata
+      },
     });
 
     if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    if (data.user) {
-
-      const { error: profileError } = await supabase
-        .from("users")
-        .insert({
-          id: data.user.id,
-          email,
-          name
-        });
-
-      if (profileError) {
-        return res.status(400).json({
-          error: "User created but profile failed",
-          details: profileError.message
-        });
-      }
-
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
     }
 
     res.status(201).json({
-      message: "Signup successful",
-      data
+      success: true,
+      message: "User registered successfully. Please verify your email.",
+      user: data.user,
     });
-
   } catch (err) {
-
     res.status(500).json({
-      error: "Signup failed",
-      details: err.message
+      success: false,
+      message: err.message,
     });
-
   }
 };
 
-/*
-================================
-LOGIN
-POST /auth/login
-================================
-*/
-const login = async (req, res) => {
-
+// =======================
+// LOGIN
+// =======================
+export const login = async (req, res) => {
   try {
-
     const { email, password } = req.body;
 
-    if (!isValidEmail(email) || !password) {
+    // ✅ Validate inputs
+    if (!email || !password) {
       return res.status(400).json({
-        error: "Email and password required"
+        success: false,
+        message: "Email and password are required",
       });
     }
 
-    const { data, error } =
-      await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     if (error) {
-      return res.status(401).json({
-        error: error.message
+      return res.status(400).json({
+        success: false,
+        message: error.message,
       });
     }
 
-    res.status(200).json({
+    res.json({
+      success: true,
       message: "Login successful",
-      data
+      session: data.session,
+      user: data.user,
     });
-
   } catch (err) {
-
     res.status(500).json({
-      error: "Login failed",
-      details: err.message
+      success: false,
+      message: err.message,
     });
-
   }
-
 };
 
-/*
-================================
-FORGOT PASSWORD (SEND OTP)
-POST /auth/forgot-password
-================================
-*/
-const forgotPassword = async (req, res) => {
-
+// =======================
+// FORGOT PASSWORD
+// =======================
+export const forgotPassword = async (req, res) => {
   try {
-
     const { email } = req.body;
 
-    if (!isValidEmail(email)) {
+    // ✅ Validate input
+    if (!email) {
       return res.status(400).json({
-        error: "Valid email required"
+        success: false,
+        message: "Email is required",
       });
     }
 
-    const { error } =
-      await supabase.auth.signInWithOtp({
-        email
-      });
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: process.env.PASSWORD_RESET_URL || "http://localhost:3000/reset-password", // ✅ env variable
+    });
 
     if (error) {
       return res.status(400).json({
-        error: error.message
+        success: false,
+        message: error.message,
       });
     }
 
-    res.status(200).json({
-      message: "OTP sent to email"
+    res.json({
+      success: true,
+      message: "Password reset email sent. Please check your inbox.",
+      data,
     });
-
   } catch (err) {
-
     res.status(500).json({
-      error: "Failed to send OTP",
-      details: err.message
+      success: false,
+      message: err.message,
     });
-
   }
-
 };
 
-/*
-================================
-VERIFY OTP
-POST /auth/verify-otp
-================================
-*/
-const verifyOtp = async (req, res) => {
-
+// =======================
+// VERIFY OTP
+// =======================
+export const verifyOtp = async (req, res) => {
   try {
+    const { email, token } = req.body;
 
-    const { email, otp } = req.body;
-
-    if (!email || !otp) {
+    // ✅ Validate inputs
+    if (!email || !token) {
       return res.status(400).json({
-        error: "Email and OTP required"
+        success: false,
+        message: "Email and OTP token are required",
       });
     }
 
-    const { data, error } =
-      await supabase.auth.verifyOtp({
-        email,
-        token: otp,
-        type: "email"
-      });
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: "email",
+    });
 
     if (error) {
       return res.status(400).json({
-        error: error.message
+        success: false,
+        message: error.message,
       });
     }
 
-    res.status(200).json({
-      message: "OTP verified",
-      session: data.session
+    res.json({
+      success: true,
+      message: "OTP verified successfully",
+      data,
     });
-
   } catch (err) {
-
     res.status(500).json({
-      error: "OTP verification failed",
-      details: err.message
+      success: false,
+      message: err.message,
     });
-
   }
-
 };
 
-/*
-================================
-RESET PASSWORD
-POST /auth/reset-password
-================================
-*/
-const resetPassword = async (req, res) => {
-
+// =======================
+// RESET PASSWORD
+// =======================
+export const resetPassword = async (req, res) => {
   try {
+    const { password, accessToken } = req.body;
 
-    const { newPassword } = req.body;
+    // ✅ Validate inputs
+    if (!password || !accessToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Password and access token are required",
+      });
+    }
 
-    const authHeader = req.headers.authorization;
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters",
+      });
+    }
 
-    if (!authHeader) {
+    // ✅ Set session with access token first
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: accessToken,
+    });
+
+    if (sessionError) {
       return res.status(401).json({
-        error: "Authorization token required"
+        success: false,
+        message: "Invalid or expired token",
       });
     }
 
-    const token = authHeader.split(" ")[1];
-
-    const response = await fetch(
-      `${process.env.SUPABASE_URL}/auth/v1/user`,
-      {
-        method: "PUT",
-        headers: {
-          apikey: process.env.SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          password: newPassword
-        })
-      }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      return res.status(400).json({
-        error: result.error_description
-      });
-    }
-
-    res.status(200).json({
-      message: "Password updated successfully"
-    });
-
-  } catch (err) {
-
-    res.status(500).json({
-      error: "Reset password failed",
-      details: err.message
-    });
-
-  }
-
-};
-
-/*
-================================
-GET PROFILE
-================================
-*/
-const getProfile = async (req, res) => {
-
-  try {
-
-    const { data, error } =
-      await supabase
-        .from("users")
-        .select("*")
-        .eq("id", req.user.id)
-        .single();
+    const { data, error } = await supabase.auth.updateUser({ password });
 
     if (error) {
-      return res.status(404).json({
-        error: "Profile not found"
+      return res.status(400).json({
+        success: false,
+        message: error.message,
       });
     }
 
-    res.status(200).json({ data });
-
-  } catch (err) {
-
-    res.status(500).json({
-      error: "Failed to fetch profile"
+    res.json({
+      success: true,
+      message: "Password updated successfully",
+      data,
     });
-
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
-
 };
 
-module.exports = {
-  signup,
-  login,
-  forgotPassword,
-  verifyOtp,
-  resetPassword,
-  getProfile
+// =======================
+// GET PROFILE
+// =======================
+export const getProfile = async (req, res) => {
+  try {
+    const { userId } = req.query;
+
+    // ✅ Validate input
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "userId is required",
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    res.json({
+      success: true,
+      profile: data,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
 };
