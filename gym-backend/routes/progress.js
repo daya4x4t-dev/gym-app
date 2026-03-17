@@ -1,25 +1,16 @@
 import express from "express";
+import authMiddleware from "../middleware/authMiddleware.js";
+import {
+  addProgress,
+  getProgress,
+  getProgressSummary,
+} from "../controllers/progressController.js";
 
 const router = express.Router();
 
-// Example: Add progress
-router.post("/", (req, res) => {
-  const { userId, weight, date } = req.body;
+router.use(authMiddleware);
+router.post("/", addProgress);
+router.get("/", getProgress);
+router.get("/summary", getProgressSummary);
 
-  res.json({
-    message: "Progress added successfully",
-    data: { userId, weight, date }
-  });
-});
-
-// Example: Get progress by user
-router.get("/:userId", (req, res) => {
-  const { userId } = req.params;
-
-  res.json({
-    message: "User progress fetched",
-    userId
-  });
-});
-
-export default router;  
+export default router;

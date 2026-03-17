@@ -1,13 +1,11 @@
 import express from "express";
-import {
-  createProfile,
-  getProfile,
-  updateProfile,
-} from "../controllers/profileController.js";
+import authMiddleware from "../middleware/authMiddleware.js";
+import { getMyProfile, updateMyProfile } from "../controllers/profileController.js";
 
 const router = express.Router();
 
-router.post("/create", createProfile);
-router.get("/:id", getProfile);
-router.put("/:id", updateProfile);
+router.use(authMiddleware);
+router.get("/", getMyProfile);
+router.put("/", updateMyProfile);
+
 export default router;

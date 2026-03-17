@@ -1,29 +1,18 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
-
 import {
-  getWorkouts,
-  getWorkoutById,
   createWorkout,
-  updateWorkout,
   deleteWorkout,
+  getWorkouts,
+  updateWorkout,
 } from "../controllers/workoutController.js";
 
 const router = express.Router();
 
-// Get all workouts
+router.use(authMiddleware);
+router.post("/", createWorkout);
 router.get("/", getWorkouts);
-
-// Get workout by ID
-router.get("/:id", getWorkoutById);
-
-// Create workout (protected)
-router.post("/", authMiddleware, createWorkout);
-
-// Update workout (protected)
-router.put("/:id", authMiddleware, updateWorkout);
-
-// Delete workout (protected)
-router.delete("/:id", authMiddleware, deleteWorkout);
+router.put("/:id", updateWorkout);
+router.delete("/:id", deleteWorkout);
 
 export default router;

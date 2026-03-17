@@ -1,66 +1,85 @@
-const supabase = require('../config/supabaseClient');
+import { supabase } from "../config/supabaseClient.js";
+import { sendError, sendSuccess } from "../utils/response.js";
 
-const addProgress = async (req, res) => {
+/**
+ * Add progress entry for authenticated user.
+ */
+export const addProgress = async (req, res) => {
   try {
-    const { workout_id, date, calories_burned } = req.body;
+    if (!req.user?.id) return sendError(res, 401, "Unauthorized");
 
-    if (!workout_id || !date || calories_burned === undefined) {
-      return res.status(400).json({ error: 'workout_id, date and calories_burned are required' });
+    const { weight, date } = req.body;
+    if (weight === undefined || !date) {
+      return sendError(res, 400, "weight and date are required");
     }
 
-    if (Number.isNaN(Number(workout_id)) || Number.isNaN(Number(calories_burned))) {
-      return res.status(400).json({ error: 'workout_id and calories_burned must be numeric' });
-    }
-
-    const payload = {
-      user_id: req.user.id,
-      workout_id: Number(workout_id),
-      date,
-      calories_burned: Number(calories_burned),
-    };
-
-    const { data, error } = await supabase.from('progress').insert(payload).select().single();
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    return res.status(201).json({ message: 'Progress saved', data });
-  } catch (err) {
-    return res.status(500).json({ error: 'Failed to save progress', details: err.message });
-  }
-};
-
-const getProgressByUserId = async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    if (!userId) {
-      return res.status(400).json({ error: 'userId is required' });
-    }
-
-    // Basic ownership guard: users can only read their own progress.
-    if (req.user.id !== userId) {
-      return res.status(403).json({ error: 'Forbidden: cannot access another user\'s progress' });
-    }
+    const numericWeight = Number(weight);
+    if (Number.isNaN(numericWeight)) return sendError(res, 400, "weight must be numeric");
 
     const { data, error } = await supabase
-      .from('progress')
-      .select('id, user_id, workout_id, date, calories_burned')
-      .eq('user_id', userId)
-      .order('date', { ascending: false });
+      .from("progress")
+      .insert({ user_id: req.user.id, weight: numericWeight, date })
+      .select("*")
+      .single();
 
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    return res.status(200).json({ data });
-  } catch (err) {
-    return res.status(500).json({ error: 'Failed to fetch progress', details: err.message });
+    if (error) return sendError(res, 400, "Unable to add progress entry");
+    return sendSuccess(res, 201, "Progress added successfully", data);
+  } catch (_error) {
+    return sendError(res, 500, "Internal server error");
   }
 };
 
-module.exports = {
-  addProgress,
-  getProgressByUserId,
+/**
+ * Get all progress entries for authenticated user.
+ */
+export const getProgress = async (req, res) => {
+  try {
+    if (!req.user?.id) return sendError(res, 401, "Unauthorized");
+
+    const { data, error } = await supabase
+      .from("progress")
+      .select("*")
+      .eq("user_id", req.user.id)
+      .order("date", { ascending: false });
+
+    if (error) return sendError(res, 400, "Unable to fetch progress entries");
+    return sendSuccess(res, 200, "Progress entries fetched successfully", data ?? []);
+  } catch (_error) {
+    return sendError(res, 500, "Internal server error");
+  }
+};
+
+/**
+ * Get progress summary for authenticated user.
+ */
+export const getProgressSummary = async (req, res) => {
+  try {
+    if (!req.user?.id) return sendError(res, 401, "Unauthorized");
+
+    const { data, error } = await supabase
+      .from("progress")
+      .select("weight, date")
+      .eq("user_id", req.user.id)
+      .order("date", { ascending: true });
+
+    if (error) return sendError(res, 400, "Unable to fetch progress summary");
+    if (!data || data.length === 0) {
+      return sendSuccess(res, 200, "Progress summary fetched successfully", {
+        currentWeight: null,
+        startingWeight: null,
+        totalChange: null,
+      });
+    }
+
+    const startingWeight = Number(data[0].weight);
+    const currentWeight = Number(data[data.length - 1].weight);
+
+    return sendSuccess(res, 200, "Progress summary fetched successfully", {
+      currentWeight,
+      startingWeight,
+      totalChange: currentWeight - startingWeight,
+    });
+  } catch (_error) {
+    return sendError(res, 500, "Internal server error");
+  }
 };

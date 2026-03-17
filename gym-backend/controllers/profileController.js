@@ -1,77 +1,55 @@
 import { supabase } from "../config/supabaseClient.js";
+import { sendError, sendSuccess } from "../utils/response.js";
 
-// Create Profile
-export const createProfile = async (req, res) => {
+/**
+ * Fetch profile for authenticated user.
+ */
+export const getMyProfile = async (req, res) => {
   try {
-    const { id, full_name, age, height, weight, phone } = req.body;
+    if (!req.user?.id) return sendError(res, 401, "Unauthorized");
 
     const { data, error } = await supabase
       .from("profiles")
-      .insert([
-        {
-          id,
-          full_name,
-          age,
-          height,
-          weight,
-          phone,
-        },
-      ]);
-
-    if (error) return res.status(400).json({ error: error.message });
-
-    res.status(201).json({
-      message: "Profile created successfully",
-      data,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// Get Profile
-export const getProfile = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", id)
+      .select("id, name, email, created_at")
+      .eq("id", req.user.id)
       .single();
 
-    if (error) return res.status(404).json({ error: error.message });
-
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    if (error || !data) return sendError(res, 404, "Profile not found");
+    return sendSuccess(res, 200, "Profile fetched successfully", data);
+  } catch (_error) {
+    return sendError(res, 500, "Internal server error");
   }
 };
 
-// Update Profile
-export const updateProfile = async (req, res) => {
+/**
+ * Update profile for authenticated user.
+ */
+export const updateMyProfile = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { full_name, age, height, weight, phone } = req.body;
+    if (!req.user?.id) return sendError(res, 401, "Unauthorized");
+
+    const { name } = req.body;
+    if (name !== undefined && String(name).trim().length === 0) {
+      return sendError(res, 400, "Name cannot be empty");
+    }
+
+    const payload = {};
+    if (name !== undefined) payload.name = String(name).trim();
+
+    if (!Object.keys(payload).length) {
+      return sendError(res, 400, "No valid fields provided");
+    }
 
     const { data, error } = await supabase
       .from("profiles")
-      .update({
-        full_name,
-        age,
-        height,
-        weight,
-        phone,
-      })
-      .eq("id", id);
+      .update(payload)
+      .eq("id", req.user.id)
+      .select("id, name, email, created_at")
+      .single();
 
-    if (error) return res.status(400).json({ error: error.message });
-
-    res.json({
-      message: "Profile updated successfully",
-      data,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    if (error || !data) return sendError(res, 404, "Profile not found");
+    return sendSuccess(res, 200, "Profile updated successfully", data);
+  } catch (_error) {
+    return sendError(res, 500, "Internal server error");
   }
 };
