@@ -1,4 +1,8 @@
 import express from "express";
+import authMiddleware from "../middleware/authMiddleware.js";
+import {
+  createWorkout,
+  deleteWorkout,
 import {
   createWorkout,
   deleteWorkout,
@@ -9,6 +13,11 @@ import {
 
 const router = express.Router();
 
+router.use(authMiddleware);
+router.post("/", createWorkout);
+router.get("/", getWorkouts);
+router.put("/:id", updateWorkout);
+router.delete("/:id", deleteWorkout);
 router.post("/", createWorkout);
 router.get("/:userId", getWorkouts);
 router.get("/:userId/:workoutId", getWorkoutById);

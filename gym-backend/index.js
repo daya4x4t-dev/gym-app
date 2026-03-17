@@ -20,12 +20,19 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 
 app.use(helmet());
 
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "").split(",").map((o) => o.trim()).filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
+      if (!allowedOrigins.length || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
       if (!allowedOrigins.length || allowedOrigins.includes(origin)) return callback(null, true);
       return callback(new Error("CORS blocked"));
     },
@@ -48,6 +55,20 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
+// request logging middleware
+app.use(morgan(NODE_ENV === "development" ? "dev" : "combined"));
+
+app.get("/health", (_req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "ok",
+    data: { environment: NODE_ENV },
+  });
+});
+
+app.use("/auth", authRoutes);
+app.use("/profile", profileRoutes);
+app.use("/api/profile", profileRoutes); // backward-compatible alias
 app.use(morgan(NODE_ENV === "development" ? "dev" : "combined"));
 
 app.get("/health", (_req, res) => {
@@ -62,11 +83,28 @@ app.use("/api/stats", statsRoutes);
 app.use("/exercises", exerciseRoutes);
 
 app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route not found: ${req.method} ${req.originalUrl}`,
+    data: {},
+  });
   res.status(404).json({ success: false, message: `Route not found: ${req.method} ${req.originalUrl}`, data: {} });
 });
 
 app.use((err, _req, res, _next) => {
   if (err.message === "CORS blocked") {
+    return res
+      .status(403)
+      .json({ success: false, message: "Origin not allowed", data: {} });
+  }
+
+  if (NODE_ENV === "development") {
+    console.error("Server error:", err);
+  }
+
+  return res
+    .status(500)
+    .json({ success: false, message: "Internal server error", data: {} });
     return res.status(403).json({ success: false, message: "Origin not allowed", data: {} });
   }
   if (NODE_ENV === "development") console.error(err);
