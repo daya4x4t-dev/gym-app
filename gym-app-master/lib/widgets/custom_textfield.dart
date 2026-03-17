@@ -63,7 +63,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
         boxShadow: _hasFocus
             ? [
                 BoxShadow(
-                  color: AppTheme.accentRed.withValues(alpha: 0.28),
+                  color: AppTheme.accentRed.withOpacity( 0.28),
                   blurRadius: 12,
                   spreadRadius: 0,
                 ),
@@ -71,7 +71,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             : [],
         border: Border.all(
           color: _hasFocus
-              ? AppTheme.accentRed.withValues(alpha: 0.7)
+              ? AppTheme.accentRed.withOpacity( 0.7)
               : Colors.transparent,
           width: 1.2,
         ),
@@ -92,7 +92,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
         decoration: InputDecoration(
           hintText: widget.hint,
           hintStyle: TextStyle(
-            color: Colors.white.withValues(alpha: 0.35),
+            color: Colors.white.withOpacity( 0.35),
             fontSize: 15,
           ),
           prefixIcon: widget.prefixIcon != null
@@ -108,7 +108,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                   onTap: () => setState(() => _obscure = !_obscure),
                   child: Icon(
                     _obscure ? Icons.visibility_off : Icons.visibility,
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: Colors.white.withOpacity( 0.4),
                     size: 20,
                   ),
                 )

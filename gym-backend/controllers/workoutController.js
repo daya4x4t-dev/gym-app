@@ -1,129 +1,83 @@
 import { supabase } from "../config/supabaseClient.js";
+import { isUuid, sendError, sendSuccess } from "../utils/response.js";
 
-// =======================
-// GET ALL WORKOUTS
-// =======================
-export const getWorkouts = async (req, res) => {
+export const createWorkout = async (req, res) => {
   try {
+    const { user_id, exercise_name, sets, reps, weight_kg, notes, workout_date } = req.body;
+    if (!user_id || !exercise_name) return sendError(res, 400, "user_id and exercise_name are required");
+    if (!isUuid(user_id)) return sendError(res, 400, "Invalid user id");
+
     const { data, error } = await supabase
       .from("workouts")
-      .select("*");
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+      .insert({ user_id, exercise_name, sets, reps, weight_kg, notes, workout_date })
+      .select()
+      .single();
+    if (error) return sendError(res, 400, "Unable to create workout");
+    return sendSuccess(res, 201, "Workout logged successfully", data);
+  } catch (_error) {
+    return sendError(res, 500, "Internal server error");
   }
 };
 
-// =======================
-// GET WORKOUT BY ID
-// =======================
-export const getWorkoutById = async (req, res) => {
+export const getWorkouts = async (req, res) => {
   try {
-    const { id } = req.params;
-
+    const { userId } = req.params;
+    if (!isUuid(userId)) return sendError(res, 400, "Invalid user id");
     const { data, error } = await supabase
       .from("workouts")
       .select("*")
-      .eq("id", id)
-      .single();
-
-    if (error) {
-      return res.status(404).json({ error: error.message });
-    }
-
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+      .eq("user_id", userId)
+      .order("workout_date", { ascending: false });
+    if (error) return sendError(res, 400, "Unable to fetch workouts");
+    return sendSuccess(res, 200, "Workouts fetched successfully", data ?? []);
+  } catch (_error) {
+    return sendError(res, 500, "Internal server error");
   }
 };
 
-// =======================
-// CREATE WORKOUT
-// =======================
-export const createWorkout = async (req, res) => {
+export const getWorkoutById = async (req, res) => {
   try {
-    const { name, description, duration } = req.body;
-
+    const { userId, workoutId } = req.params;
+    if (!isUuid(userId) || !isUuid(workoutId)) return sendError(res, 400, "Invalid ids");
     const { data, error } = await supabase
       .from("workouts")
-      .insert([
-        {
-          name,
-          description,
-          duration,
-        },
-      ])
-      .select();
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.status(201).json({
-      message: "Workout created successfully",
-      data,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+      .select("*")
+      .eq("user_id", userId)
+      .eq("id", workoutId)
+      .single();
+    if (error || !data) return sendError(res, 404, "Workout not found");
+    return sendSuccess(res, 200, "Workout fetched successfully", data);
+  } catch (_error) {
+    return sendError(res, 500, "Internal server error");
   }
 };
 
-// =======================
-// UPDATE WORKOUT
-// =======================
 export const updateWorkout = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { name, description, duration } = req.body;
+    const { workoutId } = req.params;
+    if (!isUuid(workoutId)) return sendError(res, 400, "Invalid workout id");
+    const allowed = ["exercise_name", "sets", "reps", "weight_kg", "notes", "workout_date"];
+    const payload = Object.fromEntries(
+      Object.entries(req.body).filter(([key, value]) => allowed.includes(key) && value !== undefined)
+    );
+    if (!Object.keys(payload).length) return sendError(res, 400, "No valid fields to update");
 
-    const { data, error } = await supabase
-      .from("workouts")
-      .update({
-        name,
-        description,
-        duration,
-      })
-      .eq("id", id)
-      .select();
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.json({
-      message: "Workout updated successfully",
-      data,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const { data, error } = await supabase.from("workouts").update(payload).eq("id", workoutId).select().single();
+    if (error || !data) return sendError(res, 404, "Workout not found");
+    return sendSuccess(res, 200, "Workout updated successfully", data);
+  } catch (_error) {
+    return sendError(res, 500, "Internal server error");
   }
 };
 
-// =======================
-// DELETE WORKOUT
-// =======================
 export const deleteWorkout = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const { error } = await supabase
-      .from("workouts")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      return res.status(400).json({ error: error.message });
-    }
-
-    res.json({
-      message: "Workout deleted successfully",
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const { workoutId } = req.params;
+    if (!isUuid(workoutId)) return sendError(res, 400, "Invalid workout id");
+    const { error } = await supabase.from("workouts").delete().eq("id", workoutId);
+    if (error) return sendError(res, 404, "Workout not found");
+    return sendSuccess(res, 200, "Workout deleted successfully");
+  } catch (_error) {
+    return sendError(res, 500, "Internal server error");
   }
 };

@@ -73,7 +73,7 @@ class _CustomButtonState extends State<CustomButton>
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.accentRed.withValues(alpha: 0.35),
+              color: AppTheme.accentRed.withOpacity( 0.35),
               blurRadius: 18,
               spreadRadius: 0,
               offset: const Offset(0, 6),
@@ -88,7 +88,7 @@ class _CustomButtonState extends State<CustomButton>
             onTapUp: (_) => _scaleController.reverse(),
             onTapCancel: () => _scaleController.reverse(),
             borderRadius: BorderRadius.circular(28),
-            splashColor: Colors.white.withValues(alpha: 0.1),
+            splashColor: Colors.white.withOpacity( 0.1),
             highlightColor: Colors.transparent,
             child: Ink(
               decoration: BoxDecoration(

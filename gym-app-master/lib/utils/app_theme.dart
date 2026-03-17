@@ -17,10 +17,10 @@ class AppTheme {
   static BoxDecoration glassCard({double radius = 24}) => BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08), width: 1),
+        border: Border.all(color: Colors.white.withOpacity( 0.08), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
+            color: Colors.black.withOpacity( 0.4),
             blurRadius: 24,
             spreadRadius: 0,
             offset: const Offset(0, 8),

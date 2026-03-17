@@ -33,12 +33,12 @@ class ParticlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withValues(alpha: 0.12);
+    final paint = Paint()..color = Colors.white.withOpacity( 0.12);
     final random = math.Random(42);
 
     for (int i = 0; i < 35; i++) {
       final x = random.nextDouble() * size.width;
-      final y = (random.nextDouble() * size.height + (progress * 120)) % size.height;
+      final y = (random.nextDouble() * size.height + (progress * 120,) % size.height;
       final radius = random.nextDouble() * 1.0 + 0.3;
       canvas.drawCircle(Offset(x, y), radius, paint);
     }
@@ -82,9 +82,9 @@ class LightStreakPainter extends CustomPainter {
       end: Alignment.centerRight,
       colors: [
         Colors.transparent,
-        Colors.white.withValues(alpha: 0.045 * opacity),
-        Colors.white.withValues(alpha: 0.09 * opacity),
-        Colors.white.withValues(alpha: 0.045 * opacity),
+        Colors.white.withOpacity( 0.045 * opacity),
+        Colors.white.withOpacity( 0.09 * opacity),
+        Colors.white.withOpacity( 0.045 * opacity),
         Colors.transparent,
       ],
       stops: const [0.0, 0.3, 0.5, 0.7, 1.0],
