@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'providers/auth_provider.dart';
 import 'screens/intro_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+  };
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => AuthProvider()..init(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -10,12 +21,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ErrorWidget.builder = (FlutterErrorDetails details) => const Scaffold(
+          body: Center(
+            child: Text('Something went wrong', style: TextStyle(color: Colors.white)),
+          ),
+        );
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xFF0D0D0D),
-        fontFamily: 'Poppins',
-      ),
+      theme: ThemeData(scaffoldBackgroundColor: const Color(0xFF0D0D0D), fontFamily: 'Poppins', brightness: Brightness.dark),
       home: const IntroScreen(),
     );
   }

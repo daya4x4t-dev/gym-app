@@ -30,7 +30,7 @@ class _IntroScreenState extends State<IntroScreen>
     _slideAnim = Tween<Offset>(
       begin: const Offset(0, 0.08),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOutCubic));
+    ).animate(CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOutCubic,);
   }
 
   @override
@@ -87,7 +87,7 @@ class _IntroScreenState extends State<IntroScreen>
                           Text(
                             'FORGE YOUR LIMITS',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: Colors.white.withOpacity( 0.4),
                               fontSize: 11,
                               letterSpacing: 4,
                               fontWeight: FontWeight.w500,
@@ -98,7 +98,7 @@ class _IntroScreenState extends State<IntroScreen>
                             text: 'SIGN IN',
                             onTap: () => Navigator.push(
                               context,
-                              AppTheme.fadeSlideRoute(const LoginScreen()),
+                              AppTheme.fadeSlideRoute(const LoginScreen(,),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -106,7 +106,7 @@ class _IntroScreenState extends State<IntroScreen>
                           GestureDetector(
                             onTap: () => Navigator.push(
                               context,
-                              AppTheme.fadeSlideRoute(const SignupScreen()),
+                              AppTheme.fadeSlideRoute(const SignupScreen(,),
                             ),
                             child: Container(
                               height: 55,
@@ -115,7 +115,7 @@ class _IntroScreenState extends State<IntroScreen>
                                 borderRadius: BorderRadius.circular(28),
                                 border: Border.all(
                                   color:
-                                      Colors.white.withValues(alpha: 0.25),
+                                      Colors.white.withOpacity( 0.25),
                                   width: 1.2,
                                 ),
                               ),

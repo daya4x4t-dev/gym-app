@@ -3,26 +3,19 @@ import { supabase } from "../config/supabaseClient.js";
 const authMiddleware = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.replace("Bearer ", "");
-
     if (!token) {
-      return res.status(401).json({
-        error: "Unauthorized - No token provided",
-      });
+      return res.status(401).json({ success: false, message: "Unauthorized", data: {} });
     }
 
     const { data, error } = await supabase.auth.getUser(token);
-
     if (error || !data.user) {
-      return res.status(401).json({
-        error: "Invalid or expired token",
-      });
+      return res.status(401).json({ success: false, message: "Invalid or expired token", data: {} });
     }
 
     req.user = data.user;
-    next();
-  } catch (err) {
-    console.error("Auth Middleware Error:", err);
-    res.status(500).json({ error: "Authentication failed" });
+    return next();
+  } catch (_error) {
+    return res.status(500).json({ success: false, message: "Authentication failed", data: {} });
   }
 };
 

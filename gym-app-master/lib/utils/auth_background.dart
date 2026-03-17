@@ -107,7 +107,7 @@ class _AuthBackgroundState extends State<AuthBackground>
                 opacity: _breathOpacity.value,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.65),
+                    color: Colors.black.withOpacity( 0.65),
                   ),
                 ),
               ),
